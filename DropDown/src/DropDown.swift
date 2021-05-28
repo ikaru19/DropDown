@@ -171,6 +171,16 @@ public final class DropDown: UIView {
 		}
 	}
 
+	/**
+	dropDownHeight
+
+	dropDownHeight define a height it will use that height else 
+	it will use the internally calculated height.
+	*/
+	public var dropDownHeight: CGFloat = 0.0 {
+		didSet { setNeedsUpdateConstraints() }
+	}
+
 	//MARK: Constraints
 	fileprivate var heightConstraint: NSLayoutConstraint!
 	fileprivate var widthConstraint: NSLayoutConstraint!
@@ -560,34 +570,40 @@ private extension DropDown {
 extension DropDown {
 
 	public override func updateConstraints() {
-		if !didSetupConstraints {
-			setupConstraints()
-		}
-
-		didSetupConstraints = true
-
-		let layout = computeLayout()
-
-		if !layout.canBeDisplayed {
-			super.updateConstraints()
-			hide()
-
-			return
-		}
-
-		xConstraint.constant = layout.x
-		yConstraint.constant = layout.y
-		widthConstraint.constant = layout.width
-		heightConstraint.constant = layout.visibleHeight
-
-		tableView.isScrollEnabled = layout.offscreenHeight > 0
-
-		DispatchQueue.main.async { [weak self] in
-			self?.tableView.flashScrollIndicators()
-		}
-
-		super.updateConstraints()
-	}
+        if !didSetupConstraints {
+            setupConstraints()
+        }
+        
+        didSetupConstraints = true
+        
+        let layout = computeLayout()
+        
+        if !layout.canBeDisplayed {
+            super.updateConstraints()
+            hide()
+            return
+        }
+        
+        xConstraint.constant = layout.x
+        yConstraint.constant = layout.y
+        widthConstraint.constant = layout.width
+        
+        // Change height of dropdown
+        if dropDownHeight > 0 && dropDownHeight <= layout.visibleHeight {
+            heightConstraint.constant = dropDownHeight
+        } else {
+            heightConstraint.constant = layout.visibleHeight
+        }
+        
+        // Enable scrolling if offscreen content or dropdown height is set
+        tableView.isScrollEnabled = layout.offscreenHeight > 0 || dropDownHeight > 0
+        
+        DispatchQueue.main.async { [weak self] in
+            self?.tableView.flashScrollIndicators()
+        }
+        
+        super.updateConstraints()
+   }
 
 	fileprivate func setupConstraints() {
 		translatesAutoresizingMaskIntoConstraints = false
